@@ -1,4 +1,5 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.0;
 //pragma solidity ^0.4.24;
 
 // Import the library 'Roles'
@@ -16,7 +17,7 @@ contract DistributorRole {
   Roles.Role private distributors;
 
   // In the constructor make the address that deploys this contract the 1st distributor
-  constructor() public {
+  constructor()  {
     _addDistributor(msg.sender);
   }
 

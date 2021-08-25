@@ -1,4 +1,5 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.0;
 //pragma solidity ^0.4.24;
 
 import "../coffeeaccesscontrol/ConsumerRole.sol";
@@ -8,7 +9,7 @@ import "../coffeeaccesscontrol/RetailerRole.sol";
 import "../coffeecore/Ownable.sol";
 
 // Define a contract 'Supplychain'
-contract SupplyChain is Ownable, FarmerRole(){
+contract SupplyChain is Ownable, FarmerRole, DistributorRole, RetailerRole, ConsumerRole {
 
   // Define 'owner'
   address contractOwner;
@@ -71,7 +72,7 @@ contract SupplyChain is Ownable, FarmerRole(){
   event Purchased(uint upc);
 
   // Define a modifer that checks to see if msg.sender == owner of the contract
-  modifier onlyOwner() {
+  modifier onlyContractOwner() {
     require(msg.sender == contractOwner);
     _;
   }
@@ -98,7 +99,7 @@ contract SupplyChain is Ownable, FarmerRole(){
     // the buyer could be someone else like distributor
     //items[_upc].consumerID.transfer(amountToReturn);
 
-    msg.sender.transfer(amountToReturn);
+    payable(msg.sender).transfer(amountToReturn);
   }
 
   // Define a modifier that checks if an item.state of a upc is Harvested
@@ -152,7 +153,7 @@ contract SupplyChain is Ownable, FarmerRole(){
   // In the constructor set 'owner' to the address that instantiated the contract
   // and set 'sku' to 1
   // and set 'upc' to 1
-  constructor() public payable {
+  constructor() payable {
     contractOwner = msg.sender;
     sku = 1;
     upc = 1;
@@ -161,7 +162,7 @@ contract SupplyChain is Ownable, FarmerRole(){
   // Define a function 'kill' if required
   function kill() public {
     if (msg.sender == contractOwner) {
-      selfdestruct(contractOwner);
+      selfdestruct(payable(contractOwner));
     }
   }
 
@@ -170,7 +171,7 @@ contract SupplyChain is Ownable, FarmerRole(){
   onlyFarmer()
   {
     // Add the new item as part of Harvest
-    Item newItem = Item({
+    Item memory newItem = Item({
       sku: sku,
       upc: _upc,
       ownerID: msg.sender,
@@ -267,10 +268,10 @@ contract SupplyChain is Ownable, FarmerRole(){
     items[_upc].itemState = State.Sold;
     
     // Transfer money to farmer
-    items[_upc].originFarmerID.transfer(items[_upc].productPrice);
+    payable(items[_upc].originFarmerID).transfer(items[_upc].productPrice);
     
     // emit the appropriate event
-    Sold(_upc);
+    emit Sold(_upc);
   }
 
   // Define a function 'shipItem' that allows the distributor to mark an item 'Shipped'
@@ -287,7 +288,7 @@ contract SupplyChain is Ownable, FarmerRole(){
     items[_upc].itemState = State.Shipped;
     
     // Emit the appropriate event
-    Shipped(_upc);
+    emit Shipped(_upc);
     
   }
 
@@ -306,7 +307,7 @@ contract SupplyChain is Ownable, FarmerRole(){
     items[_upc].itemState = State.Received;
     
     // Emit the appropriate event
-    Received(_upc);
+    emit Received(_upc);
     
   }
 
@@ -324,7 +325,7 @@ contract SupplyChain is Ownable, FarmerRole(){
     items[_upc].itemState = State.Purchased;
     
     // Emit the appropriate event
-    Purchased(_upc);
+    emit Purchased(_upc);
     
   }
 
@@ -335,23 +336,24 @@ contract SupplyChain is Ownable, FarmerRole(){
   uint    itemUPC,
   address ownerID,
   address originFarmerID,
-  string  originFarmName,
-  string  originFarmInformation,
-  string  originFarmLatitude,
-  string  originFarmLongitude
+  string  memory originFarmName,
+  string  memory originFarmInformation,
+  string  memory originFarmLatitude,
+  string  memory originFarmLongitude
   ) 
   {
     // Assign values to the 8 parameters
+    Item memory item = items[_upc];
     return 
     (
-      itemSKU = items[_upc].sku,
-      itemUPC = items[_upc].upc,
-      ownerID = items[_upc].ownerID,
-      originFarmerID = items[_upc].originFarmerID,
-      originFarmName = items[_upc].originFarmName,
-      originFarmInformation = items[_upc].originFarmInformation,
-      originFarmLatitude = items[_upc].originFarmLatitude,
-      originFarmLongitude = items[_upc].originFarmLongitude
+      itemSKU = item.sku,
+      itemUPC = item.upc,
+      ownerID = item.ownerID,
+      originFarmerID = item.originFarmerID,
+      originFarmName = item.originFarmName,
+      originFarmInformation = item.originFarmInformation,
+      originFarmLatitude = item.originFarmLatitude,
+      originFarmLongitude = item.originFarmLongitude
     );
   }
 
@@ -361,7 +363,7 @@ contract SupplyChain is Ownable, FarmerRole(){
   uint    itemSKU,
   uint    itemUPC,
   uint    productID,
-  string  productNotes,
+  string  memory productNotes,
   uint    productPrice,
   uint    itemState,
   address distributorID,
@@ -369,18 +371,19 @@ contract SupplyChain is Ownable, FarmerRole(){
   address consumerID
   ) 
   {
+    Item memory item = items[_upc];
     // Assign values to the 9 parameters
   return 
   (
-    itemSKU = items[_upc].sku,
-    itemUPC = items[_upc].upc,
-    productID = items[_upc].productID,
-    productNotes = items[_upc].productNotes,
-    productPrice = items[_upc].productPrice,
-    itemState = items[_upc].itemState,
-    distributorID = items[_upc].distributorID,
-    retailerID = items[_upc].retailerID,
-    consumerID = items[_upc].consumerID
+    itemSKU = item.sku,
+    itemUPC = item.upc,
+    productID = item.productID,
+    productNotes = item.productNotes,
+    productPrice = item.productPrice,
+    itemState = uint(item.itemState),
+    distributorID = item.distributorID,
+    retailerID = item.retailerID,
+    consumerID = item.consumerID
   );
   }
 }
