@@ -25,7 +25,7 @@ var contract = (function(module) {
     return this.provider.sendAsync.apply(this.provider, arguments);
   };
 
-  var BigNumber = (new Web3()).toBigNumber(0).constructor;
+  var BigNumber = (new Web3()).toBN(0).constructor;
 
   var Utils = {
     is_object: function(val) {
